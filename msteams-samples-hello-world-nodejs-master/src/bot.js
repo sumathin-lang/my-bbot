@@ -5,6 +5,7 @@ module.exports.setup = function(app) {
     var teams = require('botbuilder-teams');
     var config = require('config');
 
+    
     if (!config.has("bot.appId")) {
         // We are running locally; fix up the location of the config directory and re-intialize config
         process.env.NODE_CONFIG_DIR = "../config";
@@ -27,6 +28,9 @@ module.exports.setup = function(app) {
         session.send("Hi... We sell shirts. Say 'show shirts' to see our products.");
     }).set('storage', inMemoryBotStorage);
     
+    var stripBotAtMentions = new teams.StripBotAtMentions();
+    bot.use(stripBotAtMentions);
+        
     // Add dialog to return list of shirts available
     bot.dialog('getAlbums', function (session) {
         console.info("SSSS showSHirts");
