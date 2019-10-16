@@ -1,5 +1,42 @@
 'use strict';
 
+function loadSessionAsync (bot, event) {
+    let address = event.address;
+    return new Promise((resolve, reject) => {
+        bot.loadSession(address, (err, session) => {
+            if (!err) {
+                let locale = getLocaleFromEvent(event);
+                if (locale) {
+                    session._locale = locale;
+                    session.localizer.load(locale, (err2) => {
+                        resolve(session);
+                    });
+                } else {
+                    resolve(session);
+                }
+            } else {
+                reject(err);
+            }
+        });
+    });
+};
+
+function getLocaleFromEvent(event) {
+    // casting to keep away typescript errors
+    let currEvent = event;
+    if (currEvent.entities && currEvent.entities.length) {
+        for (let i = 0; i < currEvent.entities.length; i++) {
+            if (currEvent.entities[i].type &&
+                currEvent.entities[i].type === "clientInfo" &&
+                currEvent.entities[i].locale)
+            {
+                return currEvent.entities[i].locale;
+            }
+        }
+    }
+    return null;
+}
+
 module.exports.setup = function(app) {
     var builder = require('botbuilder');
     var teams = require('botbuilder-teams');
@@ -25,37 +62,40 @@ module.exports.setup = function(app) {
     
     var bot = new builder.UniversalBot(connector, function (session) {
         console.info("SSSS bot woke up");
-        session.send("Hi... We sell shirts. Say 'show shirts' to see our products.");
+        session.send("Hi... We sell albums. Say 'getAlbums' to see our products.");
     }).set('storage', inMemoryBotStorage);
     
     var stripBotAtMentions = new teams.StripBotAtMentions();
     bot.use(stripBotAtMentions);
-        
+
     // Add dialog to return list of shirts available
     bot.dialog('getAlbums', function (session) {
         console.info("SSSS showSHirts");
         var msg = new builder.Message(session);
-        msg.attachmentLayout(builder.AttachmentLayout.carousel)
-        msg.attachments([
-            new builder.HeroCard(session)
-                .title("Classic White T-Shirt")
-                .subtitle("100% Soft and Luxurious Cotton")
-                .text("Price is $25 and carried in sizes (S, M, L, and XL)")
-                .images([builder.CardImage.create(session, 'http://petersapparel.parseapp.com/img/whiteshirt.png')])
-                .buttons([
-                    builder.CardAction.imBack(session, "buy classic white t-shirt", "Buy")
-                ]),
-            new builder.HeroCard(session)
-                .title("Classic Gray T-Shirt")
-                .subtitle("100% Soft and Luxurious Cotton")
-                .text("Price is $25 and carried in sizes (S, M, L, and XL)")
-                .images([builder.CardImage.create(session, 'http://petersapparel.parseapp.com/img/grayshirt.png')])
-                .buttons([
-                    builder.CardAction.imBack(session, "buy classic gray t-shirt", "Buy")
-                ])
-        ]);
+        // msg.addAttachment({
+        //     contentType: "application/vnd.microsoft.card.adaptive",
+        //     content: adaptiveCard
+        // });
+        msg.addAttachment(heroCard);
         session.send(msg).endDialog();
     }).triggerAction({ matches: /^(getAlbums)/i });
+
+
+    var onInvokeHandler = function (event, callback) {
+        return async function (
+            event,
+            callback,
+        )
+        {
+            let session = await loadSessionAsync(bot, event);
+
+            let userName = event.address.user.name;
+            console.info("SSSS Invoke handler", event, userName);            
+            callback(null, "", 200);
+        };        
+    };
+
+    connector.onInvoke(onInvokeHandler());
 
     // Setup an endpoint on the router for the bot to listen.
     // NOTE: This endpoint cannot be changed and must be api/messages
@@ -64,3 +104,172 @@ module.exports.setup = function(app) {
     // Export the connector for any downstream integration - e.g. registering a messaging extension
     module.exports.connector = connector;
 };
+
+const simpleAdaptiveCard = {
+        "type": "AdaptiveCard",
+        "body": [
+            {
+                "type": "TextBlock",
+                "text": "Here is a ninja cat:"
+            },
+            {
+                "type": "Image",
+                "url": "http://adaptivecards.io/content/cats/1.png",
+                "size": "Medium"
+            }
+        ],
+        "version": "1.0"
+};
+
+const adaptiveCard = {
+    "type": "AdaptiveCard",
+    "body": [
+        {
+            "type": "TextBlock",
+            "separator": true,
+            "size": "Large",
+            "weight": "Bolder",
+            "text": "Enter basic information for this position:",
+            "isSubtle": true,
+            "wrap": true
+        },
+        {
+            "type": "TextBlock",
+            "separator": true,
+            "text": "Title",
+            "wrap": true
+        },
+        {
+            "type": "Input.Text",
+            "id": "jobTitle",
+            "placeholder": "E.g. Senior PM"
+        },
+        {
+            "type": "ColumnSet",
+            "columns": [
+                {
+                    "type": "Column",
+                    "items": [
+                        {
+                            "type": "TextBlock",
+                            "text": "Level",
+                            "wrap": true
+                        },
+                        {
+                            "type": "Input.Number",
+                            "id": "jobLevel",
+                            "value": "7",
+                            "placeholder": "Level",
+                            "min": 7,
+                            "max": 10
+                        }
+                    ],
+                    "width": 2
+                },
+                {
+                    "type": "Column",
+                    "items": [
+                        {
+                            "type": "TextBlock",
+                            "text": "Location"
+                        },
+                        {
+                            "type": "Input.ChoiceSet",
+                            "id": "jobLocation",
+                            "value": "1",
+                            "choices": [
+                                {
+                                    "title": "San Francisco",
+                                    "value": "1"
+                                },
+                                {
+                                    "title": "London",
+                                    "value": "2"
+                                },
+                                {
+                                    "title": "Singapore",
+                                    "value": "3"
+                                },
+                                {
+                                    "title": "Dubai",
+                                    "value": "3"
+                                },
+                                {
+                                    "title": "Frankfurt",
+                                    "value": "3"
+                                }
+                            ],
+                            "isCompact": true
+                        }
+                    ],
+                    "width": 2
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "type": "Action.Submit",
+            "id": "createPosting",
+            "title": "Create posting",
+            "data": {
+                "command": "createPosting",
+                "taskResponse": "message",
+            }
+        },
+        {
+            "type": "Action.Submit",
+            "id": "cancel",
+            "title": "Cancel"
+        },
+        {
+            "type": "Action.ShowCard",
+            "title": "Comment",
+            "card": {
+              "type": "AdaptiveCard",
+              "body": [
+                {
+                  "type": "Input.Text",
+                  "id": "comment",
+                  "isMultiline": true,
+                  "placeholder": "Enter your comment"
+                }
+              ],
+              "actions": [
+                {
+                  "type": "Action.Submit",
+                  "title": "OK"
+                }
+              ]
+            }
+        }        
+    ],
+    "version": "1.0"
+};
+
+const heroCard = {
+    "contentType": "application/vnd.microsoft.card.hero",
+    "content": {
+      "title": "Seattle Center Monorail",
+      "subtitle": "Seattle Center Monorail",
+      "text": "The Seattle Center Monorail is an elevated train line between Seattle Center (near the Space Needle) and downtown Seattle. It was built for the 1962 World's Fair. Its original two trains, completed in 1961, are still in service.",
+      "images": [
+        {
+          "url":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Seattle_monorail01_2008-02-25.jpg/1024px-Seattle_monorail01_2008-02-25.jpg"
+        }
+      ],
+     "buttons": [
+       {
+          "type": "openUrl",
+          "title": "Official website",
+          "value": "https://www.seattlemonorail.com"
+        },
+       {
+         "type": "invoke",
+         "title": "send invoke",
+         "value": "{\"property\": \"propertyValue\" }"
+        }
+      ]
+    }
+ }
+ 
