@@ -72,13 +72,27 @@ module.exports.setup = function(app) {
     bot.dialog('getAlbums', function (session) {
         console.info("SSSS showSHirts");
         var msg = new builder.Message(session);
-        // msg.addAttachment({
-        //     contentType: "application/vnd.microsoft.card.adaptive",
-        //     content: adaptiveCard
-        // });
-        msg.addAttachment(heroCard);
+        msg.addAttachment({
+            contentType: "application/vnd.microsoft.card.adaptive",
+            content: adaptiveCard
+        });
+        
+        // msg.addAttachment(heroCard);
         session.send(msg).endDialog();
     }).triggerAction({ matches: /^(getAlbums)/i });
+
+
+    bot.dialog('myQuestion', function (session) {
+        console.info("SSSS Show question enteres", session.value);
+
+        var msg = new builder.Message(session);
+        msg.addAttachment({
+            contentType: "application/vnd.microsoft.card.adaptive",
+            content: questionAdpativeCard
+        });
+        // msg.addAttachment(heroCard);
+        session.send(msg).endDialog();
+    }).triggerAction({ matches: /^(myQuestion)/i });
 
 
     var onInvokeHandler = function (event, callback) {
@@ -120,6 +134,62 @@ const simpleAdaptiveCard = {
         ],
         "version": "1.0"
 };
+
+
+const questionAdpativeCard = {
+    "type": "AdaptiveCard",
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "The question you asked"
+        }
+    ],    
+    "actions": [
+        {
+            "type": "Action.Submit",
+            "id": "Upvote",
+            "title": "Upvote",
+            "data": {
+                "msteams":  {
+                    "type": "invoke",
+                    "title": "upVote",
+                    "value": {
+                        "type": "upVote"
+                    }                    
+                }
+            }
+        },
+        {
+            "type": "Action.ShowCard",
+            "title": "Comment",
+            "card": {
+              "type": "AdaptiveCard",
+              "body": [
+                {
+                  "type": "Input.Text",
+                  "id": "comment",
+                  "isMultiline": true,
+                  "placeholder": "Enter your comment"
+                }
+              ],
+              "actions": [
+                {
+                  "type": "Action.Submit",
+                  "title": "OK",
+                  "data": {
+                    "msteams":  {
+                        "type": "invoke",
+                        "value": {
+                            "type": "addComment"
+                        }  
+                    }
+                  }                  
+                }
+              ]
+            }
+        } 
+    ]
+}
 
 const adaptiveCard = {
     "type": "AdaptiveCard",
@@ -213,8 +283,12 @@ const adaptiveCard = {
             "id": "createPosting",
             "title": "Create posting",
             "data": {
-                "command": "createPosting",
-                "taskResponse": "message",
+                "msteams":  {
+                    "type": "messageBack",
+                    "displayText": "I clicked the post button",
+                    "text": "myQuestion",
+                    "value": "{\"bfKey\": \"bfVal\", \"conflictKey\": \"from value\"}"
+                }
             }
         },
         {
@@ -224,7 +298,7 @@ const adaptiveCard = {
         },
         {
             "type": "Action.ShowCard",
-            "title": "Comment",
+            "title": "Ask question",
             "card": {
               "type": "AdaptiveCard",
               "body": [
@@ -232,13 +306,21 @@ const adaptiveCard = {
                   "type": "Input.Text",
                   "id": "comment",
                   "isMultiline": true,
-                  "placeholder": "Enter your comment"
+                  "placeholder": "Enter your question"
                 }
               ],
               "actions": [
                 {
                   "type": "Action.Submit",
-                  "title": "OK"
+                  "title": "OK",
+                  "data": {
+                    "msteams":  {
+                        "type": "messageBack",
+                        "displayText": "I clicked the askQuestion button",
+                        "text": "myQuestion",
+                        "value": "{\"bfKey\": \"bfVal\", \"conflictKey\": \"from value\"}"
+                    }
+                  }                  
                 }
               ]
             }
