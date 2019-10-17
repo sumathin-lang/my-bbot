@@ -83,14 +83,15 @@ module.exports.setup = function(app) {
 
 
     bot.dialog('myQuestion', function (session) {
-        console.info("SSSS Show question enteres", session.value);
+        console.info("SSSS Show question enteres", session.message);
 
         var msg = new builder.Message(session);
+        questionAdpativeCard.body[0].text = `**${session.message.address.user.name}**`;
+        questionAdpativeCard.body[1].text = session.message.value.question;
         msg.addAttachment({
             contentType: "application/vnd.microsoft.card.adaptive",
             content: questionAdpativeCard
         });
-        // msg.addAttachment(heroCard);
         session.send(msg).endDialog();
     }).triggerAction({ matches: /^(myQuestion)/i });
 
@@ -139,6 +140,10 @@ const simpleAdaptiveCard = {
 const questionAdpativeCard = {
     "type": "AdaptiveCard",
     "body": [
+        {
+            "type": "TextBlock",
+            "text": "Name of user"
+        },        
         {
             "type": "TextBlock",
             "text": "The question you asked"
@@ -285,7 +290,6 @@ const adaptiveCard = {
             "data": {
                 "msteams":  {
                     "type": "messageBack",
-                    "displayText": "I clicked the post button",
                     "text": "myQuestion",
                     "value": "{\"bfKey\": \"bfVal\", \"conflictKey\": \"from value\"}"
                 }
@@ -304,7 +308,7 @@ const adaptiveCard = {
               "body": [
                 {
                   "type": "Input.Text",
-                  "id": "comment",
+                  "id": "question",
                   "isMultiline": true,
                   "placeholder": "Enter your question"
                 }
@@ -316,7 +320,6 @@ const adaptiveCard = {
                   "data": {
                     "msteams":  {
                         "type": "messageBack",
-                        "displayText": "I clicked the askQuestion button",
                         "text": "myQuestion",
                         "value": "{\"bfKey\": \"bfVal\", \"conflictKey\": \"from value\"}"
                     }
