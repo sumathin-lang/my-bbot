@@ -41,8 +41,18 @@ module.exports.setup = function(app) {
     var builder = require('botbuilder');
     var teams = require('botbuilder-teams');
     var config = require('config');
-
+    var azure = require('botbuilder-azure'); 
     
+    var documentDbOptions = {
+        host: 'https://sumathibeatlesdb.documents.azure.com:443/', 
+        masterKey: 'FF7co3ZKGfloHj7thLGyWcKw9qItgYUX6Oo83KekBYgjCHVqCsP3QRDI8qiIIXr7skEGytqgnuxk8L9rep9rRQ==', 
+        database: 'botdocs',   
+        collection: 'botdata'
+    };
+    var docDbClient = new azure.DocumentDbClient(documentDbOptions);
+
+    var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
+
     if (!config.has("bot.appId")) {
         // We are running locally; fix up the location of the config directory and re-intialize config
         process.env.NODE_CONFIG_DIR = "../config";
@@ -84,7 +94,7 @@ module.exports.setup = function(app) {
 
     bot.dialog('myQuestion', function (session) {
         console.info("SSSS Show question enteres", session.message);
-
+        session.save();
         var msg = new builder.Message(session);
         questionAdpativeCard.body[0].text = `**${session.message.address.user.name}**`;
         questionAdpativeCard.body[1].text = session.message.value.question;
