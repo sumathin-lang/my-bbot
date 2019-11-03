@@ -41,7 +41,7 @@ module.exports.setup = function(app) {
     var builder = require('botbuilder');
     var teams = require('botbuilder-teams');
     var config = require('config');
-    var azure = require('botbuilder-azure'); 
+    // var azure = require('botbuilder-azure'); 
     
     var documentDbOptions = {
         host: 'https://sumathibeatlesdb.documents.azure.com:443/', 
@@ -49,9 +49,9 @@ module.exports.setup = function(app) {
         database: 'botdocs',   
         collection: 'botdata'
     };
-    var docDbClient = new azure.DocumentDbClient(documentDbOptions);
+    // var docDbClient = new azure.DocumentDbClient(documentDbOptions);
 
-    var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
+    // var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
 
     if (!config.has("bot.appId")) {
         // We are running locally; fix up the location of the config directory and re-intialize config
@@ -72,7 +72,21 @@ module.exports.setup = function(app) {
     
     var bot = new builder.UniversalBot(connector, function (session) {
         console.info("SSSS bot woke up");
-        session.send("Hi... We sell albums. Say 'getAlbums' to see our products.");
+        //session.send("Hi... We sell albums. Say 'getAlbums' to see our products.");
+        var tmObj ={
+            "task": {
+              "type": "continue",
+              "value": {
+                "title": "Task module title",
+                "height": 500,
+                "width": "medium",
+                "url": "https://contoso.com/msteams/taskmodules/newcustomer",
+                "fallbackUrl": "https://contoso.com/msteams/taskmodules/newcustomer"
+              }
+            }
+          };
+        session.send(JSON.stringify(tmObj));
+        
     }).set('storage', inMemoryBotStorage);
     
     var stripBotAtMentions = new teams.StripBotAtMentions();
@@ -121,6 +135,42 @@ module.exports.setup = function(app) {
     };
 
     connector.onInvoke(onInvokeHandler());
+
+    var onCESubmitActionHandler = function (event, request, callback) {
+
+        // var msg = new builder.Message();
+        // msg.addAttachment({
+        //     contentType: "application/vnd.microsoft.card.adaptive",
+        //     content: questionAdpativeCard
+        // });
+
+    //    connector.startReplyChain(event.address.serviceUrl, event.sourceEvent.channel.id, msg, ((err, address) => {
+    //         var newmsg = msg.address(address);
+    //         newmsg.text('Hello, this is a notification');
+    //         bot.send(newmsg);
+    //    }));
+    //    callback(null, "", 200);
+    const attachment = {
+            contentType: "application/vnd.microsoft.card.adaptive",
+            content: adaptiveCard
+    };
+    let msg = new builder.Message()
+        .address(event.address)
+        .addAttachment(attachment);
+    connector.send([msg.toMessage()],
+        (error) => {
+            if(error){
+                //TODO: Handle error and callback
+            }
+            else {
+                callback(null, null, 200);
+            }
+        }
+    );
+
+    };
+    
+    connector.onComposeExtensionSubmitAction(onCESubmitActionHandler);    
 
     // Setup an endpoint on the router for the bot to listen.
     // NOTE: This endpoint cannot be changed and must be api/messages
@@ -367,4 +417,151 @@ const heroCard = {
       ]
     }
  }
+
+ const CESubmitResponse = {
+    "composeExtension": {
+      "type": "result",
+      "attachmentLayout": "list",
+      "attachments": [
+        {  
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "content": {
+                "type": "AdaptiveCard",
+                "body": [
+                    {
+                        "type": "TextBlock",
+                        "separator": true,
+                        "size": "Large",
+                        "weight": "Bolder",
+                        "text": "Enter basic information for this position:",
+                        "isSubtle": true,
+                        "wrap": true
+                    },
+                    {
+                        "type": "TextBlock",
+                        "separator": true,
+                        "text": "Title",
+                        "wrap": true
+                    },
+                    {
+                        "type": "Input.Text",
+                        "id": "jobTitle",
+                        "placeholder": "E.g. Senior PM"
+                    },
+                    {
+                        "type": "ColumnSet",
+                        "columns": [
+                            {
+                                "type": "Column",
+                                "items": [
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "Level",
+                                        "wrap": true
+                                    },
+                                    {
+                                        "type": "Input.Number",
+                                        "id": "jobLevel",
+                                        "value": "7",
+                                        "placeholder": "Level",
+                                        "min": 7,
+                                        "max": 10
+                                    }
+                                ],
+                                "width": 2
+                            },
+                            {
+                                "type": "Column",
+                                "items": [
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "Location"
+                                    },
+                                    {
+                                        "type": "Input.ChoiceSet",
+                                        "id": "jobLocation",
+                                        "value": "1",
+                                        "choices": [
+                                            {
+                                                "title": "San Francisco",
+                                                "value": "1"
+                                            },
+                                            {
+                                                "title": "London",
+                                                "value": "2"
+                                            },
+                                            {
+                                                "title": "Singapore",
+                                                "value": "3"
+                                            },
+                                            {
+                                                "title": "Dubai",
+                                                "value": "3"
+                                            },
+                                            {
+                                                "title": "Frankfurt",
+                                                "value": "3"
+                                            }
+                                        ],
+                                        "isCompact": true
+                                    }
+                                ],
+                                "width": 2
+                            }
+                        ]
+                    }
+                ],
+                "actions": [
+                    {
+                        "type": "Action.Submit",
+                        "id": "createPosting",
+                        "title": "Create posting",
+                        "data": {
+                            "msteams":  {
+                                "type": "messageBack",
+                                "text": "myQuestion",
+                                "value": "{\"bfKey\": \"bfVal\", \"conflictKey\": \"from value\"}"
+                            }
+                        }
+                    },
+                    {
+                        "type": "Action.Submit",
+                        "id": "cancel",
+                        "title": "Cancel"
+                    },
+                    {
+                        "type": "Action.ShowCard",
+                        "title": "Ask question",
+                        "card": {
+                          "type": "AdaptiveCard",
+                          "body": [
+                            {
+                              "type": "Input.Text",
+                              "id": "question",
+                              "isMultiline": true,
+                              "placeholder": "Enter your question"
+                            }
+                          ],
+                          "actions": [
+                            {
+                              "type": "Action.Submit",
+                              "title": "OK",
+                              "data": {
+                                "msteams":  {
+                                    "type": "messageBack",
+                                    "text": "myQuestion",
+                                    "value": "{\"bfKey\": \"bfVal\", \"conflictKey\": \"from value\"}"
+                                }
+                              }                  
+                            }
+                          ]
+                        }
+                    }        
+                ],
+                "version": "1.0"
+            } 
+        }
+      ]
+    }
+  }
  

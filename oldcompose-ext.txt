@@ -1,0 +1,44 @@
+    "composeExtensions": [
+        {
+            "botId": "a6424fb6-1b6e-48c9-8ddb-3a16b3a7acbb",
+            "canUpdateConfiguration": true,
+            "commands": [
+                {
+                    "id": "getRandomText",
+                    "type": "query",
+                    "title": "get beatles songs",
+                    "description": "get my fav beatles desc",
+                    "initialRun": true,
+                    "fetchTask": false,
+                    "context": [
+                        "commandBox",
+                        "compose"
+                    ],
+                    "parameters": [
+                        {
+                            "name": "cardTitle",
+                            "title": "beatles card title",
+                            "description": "beatles card param desc",
+                            "inputType": "text"
+                        }
+                    ]
+                },
+                {
+                    "id": "getSongs",
+                    "type": "query",
+                    "title": "myGetSongsTitle",
+                    "description": "my custom command getsongs desc",
+                    "initialRun": false,
+                    "fetchTask": false,
+                    "parameters": [
+                        {
+                            "name": "songname",
+                            "title": "name param title",
+                            "description": "name param desc",
+                            "inputType": "text"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
