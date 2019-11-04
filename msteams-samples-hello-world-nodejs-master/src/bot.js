@@ -41,7 +41,7 @@ module.exports.setup = function(app) {
     var builder = require('botbuilder');
     var teams = require('botbuilder-teams');
     var config = require('config');
-    // var azure = require('botbuilder-azure'); 
+    var azure = require('botbuilder-azure'); 
     
     var documentDbOptions = {
         host: 'https://sumathibeatlesdb.documents.azure.com:443/', 
@@ -49,9 +49,9 @@ module.exports.setup = function(app) {
         database: 'botdocs',   
         collection: 'botdata'
     };
-    // var docDbClient = new azure.DocumentDbClient(documentDbOptions);
+    var docDbClient = new azure.DocumentDbClient(documentDbOptions);
 
-    // var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
+    var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
 
     if (!config.has("bot.appId")) {
         // We are running locally; fix up the location of the config directory and re-intialize config
@@ -87,7 +87,7 @@ module.exports.setup = function(app) {
           };
         session.send(JSON.stringify(tmObj));
         
-    }).set('storage', inMemoryBotStorage);
+    }).set('storage', cosmosStorage);
     
     var stripBotAtMentions = new teams.StripBotAtMentions();
     bot.use(stripBotAtMentions);
@@ -108,7 +108,6 @@ module.exports.setup = function(app) {
 
     bot.dialog('myQuestion', function (session) {
         console.info("SSSS Show question enteres", session.message);
-        session.save();
         var msg = new builder.Message(session);
         questionAdpativeCard.body[0].text = `**${session.message.address.user.name}**`;
         questionAdpativeCard.body[1].text = session.message.value.question;
@@ -117,6 +116,8 @@ module.exports.setup = function(app) {
             content: questionAdpativeCard
         });
         session.send(msg).endDialog();
+
+        // session.save();
     }).triggerAction({ matches: /^(myQuestion)/i });
 
 
@@ -164,6 +165,45 @@ module.exports.setup = function(app) {
             }
             else {
                 callback(null, null, 200);
+                var context = {
+                    persistConversationData: true,
+                    persistUserData: false,
+                    // userId
+                    conversationId: event.address.conversation.id
+                    //conversationId: event.value.data.Name
+                };
+                const topic = `topic-${event.value.data.Name}`;
+                var data = {
+                    conversationData: {
+                        [topic]: {
+                            "q1": {
+                                comments: {
+                                text: "comment 1",
+                                votes: 1
+                                }
+                            },
+                            "q2": {
+                                comments: {
+                                    text: "comment 2",
+                                    votes: 1
+                                }
+                            }
+                        }
+                    }
+                };
+                console.info("WRITING to DB", event.value);
+                cosmosStorage.saveData(context, data, (e) => {
+                    if (e) {
+                        console.info("COSMOS ERR", e)
+                    }
+                }); 
+                cosmosStorage.getData(context, (err,data) => {
+                    if (err) {
+                        console.error("READ ERR", err);
+                    } else {
+                        console.info("read data", data);
+                    }
+                })               
             }
         }
     );
