@@ -115,11 +115,31 @@ module.exports.setup = function(app) {
             contentType: "application/vnd.microsoft.card.adaptive",
             content: questionAdpativeCard
         });
-        session.send(msg).endDialog();
-
-        // session.save();
+        // connector.send([msg.toMessage()],
+        //     (error, data) => {
+        //         if(error){
+        //             //TODO: Handle error and callback
+        //         }
+        //         else {
+        //             console.info("QUESTION CARD sent", data[0].id);
+        //         }
+        //     }); 
+        session.send(msg).sendBatch(function (err, addresses) {
+            if(err){
+                //TODO: Handle error and callback
+            }
+            else {
+                console.info("QUESTION CARD sent", addresses);
+            }
+         });
+        session.endDialog();
+          
     }).triggerAction({ matches: /^(myQuestion)/i });
 
+    // setup message reaction handler for like and remove like message
+    bot.on("messageReaction", (event) => {
+        console.info("Message Reaction", event);
+    });
 
     var onInvokeHandler = function (event, callback) {
         return async function (
@@ -148,13 +168,14 @@ module.exports.setup = function(app) {
             .address(event.address)
             .addAttachment(attachment);
         connector.send([msg.toMessage()],
-            (error) => {
+            (error, data) => {
                 if(error){
                     //TODO: Handle error and callback
                 }
                 else {
+                    console.info("CE SUBMIT DONE", data[0].id);
                     callback(null, null, 200);
-                    saveTopicToDB(event, cosmosStorage, topic);
+                    saveTopicToDB(event, cosmosStorage, data[0].id);
                 }
             });
     };

@@ -1,5 +1,5 @@
 {
     "appService.showBuildDuringDeployPrompt": false,
-    "appService.defaultWebAppToDeploy": "",
+    "appService.defaultWebAppToDeploy": "/subscriptions/fc7ebf7d-b3ae-45c2-9c08-67d0ae8ce012/resourceGroups/SumathiGrp/providers/Microsoft.Web/sites/curewebapp",
     "appService.deploySubpath": ""
 }
