@@ -173,35 +173,56 @@ module.exports.setup = function(app) {
                     //conversationId: event.value.data.Name
                 };
                 const topic = `topic-${event.value.data.Name}`;
-                var data = {
-                    conversationData: {
-                        [topic]: {
-                            "q1": {
-                                comments: {
-                                text: "comment 1",
-                                votes: 1
-                                }
-                            },
-                            "q2": {
-                                comments: {
-                                    text: "comment 2",
-                                    votes: 1
-                                }
-                            }
-                        }
-                    }
-                };
+                // var data = {
+                //     conversationData: {
+                //         [topic]: {
+                //             "q1": {
+                //                 comments: {
+                //                 text: "comment 1",
+                //                 votes: 1
+                //                 }
+                //             },
+                //             "q2": {
+                //                 comments: {
+                //                     text: "comment 2",
+                //                     votes: 1
+                //                 }
+                //             }
+                //         }
+                //     }
+                // };
                 console.info("WRITING to DB", event.value);
-                cosmosStorage.saveData(context, data, (e) => {
-                    if (e) {
-                        console.info("COSMOS ERR", e)
-                    }
-                }); 
+ 
                 cosmosStorage.getData(context, (err,data) => {
                     if (err) {
                         console.error("READ ERR", err);
                     } else {
                         console.info("read data", data);
+                        var newConvData = {
+                            ...data.conversationData,
+                            [topic]: {
+                                "q1": {
+                                    comments: {
+                                    text: "comment 1",
+                                    votes: 1
+                                    }
+                                },
+                                "q2": {
+                                    comments: {
+                                        text: "comment 2",
+                                        votes: 1
+                                    }
+                                }                                
+                            }
+                        };
+                        var newData = {
+                            conversationData: newConvData
+                        }
+                        cosmosStorage.saveData(context, newData, (e) => {
+                            if (e) {
+                                console.info("COSMOS ERR", e)
+                            }
+                        });                        
                     }
                 })               
             }
