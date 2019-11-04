@@ -138,97 +138,25 @@ module.exports.setup = function(app) {
     connector.onInvoke(onInvokeHandler());
 
     var onCESubmitActionHandler = function (event, request, callback) {
-
-        // var msg = new builder.Message();
-        // msg.addAttachment({
-        //     contentType: "application/vnd.microsoft.card.adaptive",
-        //     content: questionAdpativeCard
-        // });
-
-    //    connector.startReplyChain(event.address.serviceUrl, event.sourceEvent.channel.id, msg, ((err, address) => {
-    //         var newmsg = msg.address(address);
-    //         newmsg.text('Hello, this is a notification');
-    //         bot.send(newmsg);
-    //    }));
-    //    callback(null, "", 200);
-    const attachment = {
-            contentType: "application/vnd.microsoft.card.adaptive",
-            content: adaptiveCard
-    };
-    let msg = new builder.Message()
-        .address(event.address)
-        .addAttachment(attachment);
-    connector.send([msg.toMessage()],
-        (error) => {
-            if(error){
-                //TODO: Handle error and callback
-            }
-            else {
-                callback(null, null, 200);
-                var context = {
-                    persistConversationData: true,
-                    persistUserData: false,
-                    // userId
-                    conversationId: event.address.conversation.id
-                    //conversationId: event.value.data.Name
-                };
-                const topic = `topic-${event.value.data.Name}`;
-                // var data = {
-                //     conversationData: {
-                //         [topic]: {
-                //             "q1": {
-                //                 comments: {
-                //                 text: "comment 1",
-                //                 votes: 1
-                //                 }
-                //             },
-                //             "q2": {
-                //                 comments: {
-                //                     text: "comment 2",
-                //                     votes: 1
-                //                 }
-                //             }
-                //         }
-                //     }
-                // };
-                console.info("WRITING to DB", event.value);
- 
-                cosmosStorage.getData(context, (err,data) => {
-                    if (err) {
-                        console.error("READ ERR", err);
-                    } else {
-                        console.info("read data", data);
-                        var newConvData = {
-                            ...data.conversationData,
-                            [topic]: {
-                                "q1": {
-                                    comments: {
-                                    text: "comment 1",
-                                    votes: 1
-                                    }
-                                },
-                                "q2": {
-                                    comments: {
-                                        text: "comment 2",
-                                        votes: 1
-                                    }
-                                }                                
-                            }
-                        };
-                        var newData = {
-                            conversationData: newConvData
-                        }
-                        cosmosStorage.saveData(context, newData, (e) => {
-                            if (e) {
-                                console.info("COSMOS ERR", e)
-                            }
-                        });                        
-                    }
-                })               
-            }
-        }
-    );
-
+        const attachment = {
+                contentType: "application/vnd.microsoft.card.adaptive",
+                content: adaptiveCard
+        };
+        const topic = `topic-${event.value.data.Name}`;
+        
+        let msg = new builder.Message()
+            .address(event.address)
+            .addAttachment(attachment);
+        connector.send([msg.toMessage()],
+            (error) => {
+                if(error){
+                    //TODO: Handle error and callback
+                }
+                else {
+                    callback(null, null, 200);
+                    saveTopicToDB(event, cosmosStorage, topic);
+                }
+            });
     };
     
     connector.onComposeExtensionSubmitAction(onCESubmitActionHandler);    
@@ -240,6 +168,39 @@ module.exports.setup = function(app) {
     // Export the connector for any downstream integration - e.g. registering a messaging extension
     module.exports.connector = connector;
 };
+
+function saveTopicToDB(event, cosmosStorage, topic) {
+    var context = {
+        persistConversationData: true,
+        persistUserData: false,
+        // userId
+        conversationId: event.address.conversation.id
+        //conversationId: event.value.data.Name
+    };
+
+    console.info("WRITING to DB", event.value);
+
+    cosmosStorage.getData(context, (err,data) => {
+        if (err) {
+            console.error("READ ERR", err);
+        } else {
+            console.info("read data", data);
+            var newConvData = {
+                ...data.conversationData,
+                [topic]: {                               
+                }
+            };
+            var newData = {
+                conversationData: newConvData
+            }
+            cosmosStorage.saveData(context, newData, (e) => {
+                if (e) {
+                    console.info("COSMOS ERR", e)
+                }
+            });                        
+        }
+    })               
+}
 
 const simpleAdaptiveCard = {
         "type": "AdaptiveCard",
