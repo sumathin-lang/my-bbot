@@ -1,0 +1,130 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.7/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.7",
+  "version": "1.0.0",
+  "id": "d1ccc5e1-1fbf-450f-821a-bd25f97d293c",
+  "packageName": "sumathi.beatles.com",
+  "developer": {
+    "name": "SumathiBeatles",
+    "websiteUrl": "https://www.microsoft.com",
+    "privacyUrl": "https://www.microsoft.com/privacy",
+    "termsOfUseUrl": "https://www.microsoft.com/termsofuse"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "name": {
+    "short": "BeatlesApp",
+    "full": "MyBeatlesApp"
+  },
+  "description": {
+    "short": "Beatles desc music band",
+    "full": "This sample app provides a very simple app for Microsoft Teams. You can extend this to add more content and capabilities."
+  },
+  "accentColor": "#60A18E",
+  "configurableTabs": [
+    {
+      "configurationUrl": "https://e18fb86b2bb3.ngrok.io/configure",
+      "canUpdateConfiguration": true,
+      "scopes": [
+        "team"
+      ]
+    }
+  ],
+  "staticTabs": [
+    {
+      "entityId": "sumathi.beatles.com.hellotab",
+      "name": "About Beatles Tab",
+      "contentUrl": "https://e18fb86b2bb3.ngrok.io/hello",
+      "websiteUrl": "https://e18fb86b2bb3.ngrok.io/hello",
+      "scopes": [
+        "personal"
+      ]
+    }
+  ],
+  "bots": [
+    {
+      "botId": "a6424fb6-1b6e-48c9-8ddb-3a16b3a7acbb",
+      "scopes": [
+        "personal",
+        "team",
+        "groupchat"
+      ],
+      "commandLists": [
+        {
+          "scopes": [
+            "team"
+          ],
+          "commands": [
+            {
+              "title": "GetAlbums",
+              "description": "Beatles Albums"
+            }
+          ]
+        },
+        {
+          "scopes": [
+            "groupchat"
+          ],
+          "commands": [
+            {
+              "title": "GetAlbums",
+              "description": "Beatles Albums"
+            }
+          ]
+        }
+      ],
+      "supportsFiles": false,
+      "isNotificationOnly": false
+    }
+  ],
+  "composeExtensions": [
+    {
+      "botId": "a6424fb6-1b6e-48c9-8ddb-3a16b3a7acbb",
+      "canUpdateConfiguration": true,
+      "commands": [
+        {
+          "id": "addTodo",
+          "type": "action",
+          "title": "Create To Do",
+          "description": "Create a To Do item",
+          "initialRun": false,
+          "fetchTask": false,
+          "context": [
+            "commandBox",
+            "message",
+            "compose"
+          ],
+          "parameters": [
+            {
+              "name": "Name",
+              "title": "Title",
+              "description": "To Do Title",
+              "inputType": "text"
+            },
+            {
+              "name": "Description",
+              "title": "Description",
+              "description": "Description of the task",
+              "inputType": "textarea"
+            },
+            {
+              "name": "Date",
+              "title": "Date",
+              "description": "Due date for the task",
+              "inputType": "date"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "e18fb86b2bb3.ngrok.io"
+  ]
+}

@@ -91,6 +91,7 @@ module.exports.setup = function(app) {
     
     var stripBotAtMentions = new teams.StripBotAtMentions();
     bot.use(stripBotAtMentions);
+    bot.set("persistConversationData", true);
 
     // Add dialog to return list of shirts available
     bot.dialog('getAlbums', function (session) {
@@ -129,7 +130,13 @@ module.exports.setup = function(app) {
                 //TODO: Handle error and callback
             }
             else {
-                console.info("QUESTION CARD sent", addresses);
+                console.info("QUESTION CARD sent", session.message.address.replyToId, addresses[0].id, session.conversationData);
+                // session.conversationData.topics[session.message.address.replyToId] = {
+                //     [addresses[0].id]: {
+                //         comments: [],
+                //         votes: 0
+                //     }
+                //  }
             }
          });
         session.endDialog();
@@ -147,7 +154,7 @@ module.exports.setup = function(app) {
             callback,
         )
         {
-            let session = await loadSessionAsync(bot, event);
+           // let session = await loadSessionAsync(bot, event);
 
             let userName = event.address.user.name;
             console.info("SSSS Invoke handler", event, userName);            
@@ -157,30 +164,42 @@ module.exports.setup = function(app) {
 
     connector.onInvoke(onInvokeHandler());
 
-    var onCESubmitActionHandler = function (event, request, callback) {
-        const attachment = {
-                contentType: "application/vnd.microsoft.card.adaptive",
-                content: adaptiveCard
-        };
-        const topic = `topic-${event.value.data.Name}`;
-        
-        let msg = new builder.Message()
-            .address(event.address)
-            .addAttachment(attachment);
-        connector.send([msg.toMessage()],
-            (error, data) => {
-                if(error){
-                    //TODO: Handle error and callback
-                }
-                else {
-                    console.info("CE SUBMIT DONE", data[0].id);
-                    callback(null, null, 200);
-                    saveTopicToDB(event, cosmosStorage, data[0].id);
-                }
-            });
+    var onCESubmitActionHandler =  function (event, request, callback) {
+        return async function(event, request, callback) {
+            const attachment = {
+                    contentType: "application/vnd.microsoft.card.adaptive",
+                    content: adaptiveCard
+            };
+            const topic = `topic-${event.value.data.Name}`;
+            
+            let msg = new builder.Message()
+                .address(event.address)
+                .addAttachment(attachment);
+
+            let session = await loadSessionAsync(bot, event);            
+            //connector.send([msg.toMessage()],
+            session.send(msg).sendBatch(
+                (error, data) => {
+                    if(error){
+                        //TODO: Handle error and callback
+                    }
+                    else {
+                        console.info("CE SUBMIT DONE", data[0].id, session.conversationData);
+                        
+                        session.conversationData.myFoo = "bar";
+                        // if (!session.conversationData.topics) {
+                        //     session.conversationData.topics = {};
+                        // } 
+                        //session.conversationData.topics[data[0].id] = {};
+                        
+                        callback(null, null, 200);
+                        // saveTopicToDB(event, cosmosStorage, data[0].id);
+                    }
+                });
+        }
     };
     
-    connector.onComposeExtensionSubmitAction(onCESubmitActionHandler);    
+    connector.onComposeExtensionSubmitAction(onCESubmitActionHandler());    
 
     // Setup an endpoint on the router for the bot to listen.
     // NOTE: This endpoint cannot be changed and must be api/messages
